@@ -42,4 +42,7 @@ class OAuth2CallbackView(LoginRequiredMixin, View):
         user_token.token = token
         user_token.save()
 
-        return redirect(provider['success_url'])
+        return redirect(self.get_success_url(user_token))
+
+    def get_success_url(self, user_token):
+        return user_token.get_provider()['success_url']

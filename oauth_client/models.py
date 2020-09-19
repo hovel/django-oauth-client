@@ -39,7 +39,7 @@ class UserToken(models.Model):
         self.expires_at = getattr(token, 'expires_at', None)
 
     def refresh(self):
-        provider = settings.OAUTH2_PROVIDERS[self.provider]
+        provider = self.get_provider()
 
         oauth = OAuth2Session(
             client_id=provider['client_id'],
@@ -53,3 +53,6 @@ class UserToken(models.Model):
 
         self.token = token
         self.save()
+
+    def get_provider(self) -> dict:
+        return settings.OAUTH2_PROVIDERS[self.provider]
