@@ -1,3 +1,5 @@
+from datetime import datetime
+
 from django.conf import settings
 from django.db import models
 from django.utils import timezone
@@ -25,18 +27,24 @@ class UserToken(models.Model):
         params = {
             'scope': self.scope or None,
             'access_token': self.access_token,
-            'refresh_token': self.refresh_token,
-            'expires_at': self.expires_at,
-            'expires_in': (self.expires_at - timezone.now()).seconds
         }
+        if self.refresh_token:
+            params['refresh_token'] = self.refresh_token
+        if self.expires_at:
+            params['expires_at'] = self.expires_at.timestamp()
+            params['expires_in'] = (self.expires_at - timezone.now()).seconds
         return OAuth2Token(params)
 
     @token.setter
     def token(self, token: OAuth2Token):
+        expires_at = token.get('expires_at', None)
+        if expires_at:
+            expires_at = datetime.fromtimestamp(expires_at)
+
         self.scope = token.scope or ''  # in case of None
         self.access_token = token['access_token']
         self.refresh_token = token.get('refresh_token', '')
-        self.expires_at = token.get('expires_at', None)
+        self.expires_at = expires_at
 
     def refresh(self):
         provider = self.get_provider()
