@@ -34,9 +34,9 @@ class UserToken(models.Model):
     @token.setter
     def token(self, token: OAuth2Token):
         self.scope = token.scope or ''  # in case of None
-        self.access_token = token.access_token
-        self.refresh_token = getattr(token, 'refresh_token', '')
-        self.expires_at = getattr(token, 'expires_at', None)
+        self.access_token = token['access_token']
+        self.refresh_token = token.get('refresh_token', '')
+        self.expires_at = token.get('expires_at', None)
 
     def refresh(self):
         provider = self.get_provider()
