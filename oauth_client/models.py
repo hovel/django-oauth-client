@@ -5,16 +5,17 @@ from django.db import models
 from django.utils import timezone
 from oauthlib.oauth2 import OAuth2Token
 from requests_oauthlib import OAuth2Session
-
+import oauth_client
 
 class UserToken(models.Model):
     user = models.ForeignKey(
         settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
     provider = models.CharField(max_length=50)
     scope = models.TextField()
-    access_token = models.CharField(max_length=255)
-    refresh_token = models.CharField(max_length=255, blank=True)
+    access_token = models.CharField(max_length=2048)
+    refresh_token = models.CharField(max_length=2048, blank=True)
     expires_at = models.DateTimeField(blank=True, null=True)
+    endpoint = models.CharField(max_length=255, null=True, blank=True)
 
     class Meta:
         unique_together = ['user', 'provider']
@@ -47,15 +48,17 @@ class UserToken(models.Model):
         self.expires_at = expires_at
 
     def refresh(self):
+        import oauth_client.utils
         provider = self.get_provider()
 
         oauth = OAuth2Session(
             client_id=provider['client_id'],
-            scope=self.token.scopes,
+            scope=self.token.scope or '',
             token=self.token)
-
+        token_url=oauth_client.utils.get_token_url(self.get_provider(), endpoint=self.endpoint)
+        print(token_url)
         token = oauth.refresh_token(
-            token_url=provider['token_url'],
+            token_url=oauth_client.utils.get_token_url(self.get_provider(), endpoint=self.endpoint),
             client_id=provider['client_id'],
             client_secret=provider['client_secret'])
 

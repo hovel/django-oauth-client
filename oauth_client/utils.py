@@ -1,14 +1,27 @@
 from datetime import timedelta
-
 from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.http import HttpRequest
-from django.utils import timezone
+from django.core.exceptions import ImproperlyConfigured
 from requests_oauthlib import OAuth2Session
 
 from oauth_client.models import UserToken
 
 User = get_user_model()
+
+def get_token_url(provider: dict, request: HttpRequest=None, endpoint: str=None) -> str:
+    assert(request or endpoint)
+    assert('token_url' in provider)
+    token_url = provider['token_url']
+    if type(token_url) == str:
+        return token_url
+    if callable(token_url):
+        if request:
+            assert('endpoint' in provider)
+            return token_url(provider['endpoint'](request))
+        if endpoint:
+            return token_url(endpoint)
+    raise ImproperlyConfigured(f'`token_url` for oauth provider {provider} should be either str or callable')
 
 
 def get_state_session_key(codename: str) -> str:
