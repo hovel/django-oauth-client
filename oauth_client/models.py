@@ -55,8 +55,6 @@ class UserToken(models.Model):
             client_id=provider['client_id'],
             scope=self.token.scope or '',
             token=self.token)
-        token_url=oauth_client.utils.get_token_url(self.get_provider(), endpoint=self.endpoint)
-        print(token_url)
         token = oauth.refresh_token(
             token_url=oauth_client.utils.get_token_url(self.get_provider(), endpoint=self.endpoint),
             client_id=provider['client_id'],
@@ -64,6 +62,14 @@ class UserToken(models.Model):
 
         self.token = token
         self.save()
+
+    def get_session(self):
+        provider = self.get_provider()
+        oauth = OAuth2Session(
+            client_id=provider['client_id'],
+            scope=self.token.scope or '',
+            token=self.token)
+        return oauth
 
     def get_provider(self) -> dict:
         return settings.OAUTH2_PROVIDERS[self.provider]
