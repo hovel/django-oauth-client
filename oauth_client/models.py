@@ -5,7 +5,6 @@ from django.db import models
 from django.utils import timezone
 from oauthlib.oauth2 import OAuth2Token
 from requests_oauthlib import OAuth2Session
-import oauth_client
 
 class UserToken(models.Model):
     user = models.ForeignKey(
