@@ -1,15 +1,29 @@
-from datetime import datetime
-
+from datetime import datetime, timedelta
+import logging
 from django.conf import settings
 from django.db import models
 from django.utils import timezone
 from oauthlib.oauth2 import OAuth2Token
 from requests_oauthlib import OAuth2Session
+import requests
+
+logger = logging.getLogger(__name__)
+
+
+class ProviderPart(models.Model):
+    name = models.CharField(max_length=50, db_index=True)
+    client_id = models.CharField(max_length=2048, null=True, blank=True)
+    client_secret = models.CharField(max_length=2048, null=True, blank=True)
+    token_url = models.URLField(max_length=150, null=True, blank=True)
+    provider = models.CharField(max_length=50, db_index=True)
+
 
 class UserToken(models.Model):
     user = models.ForeignKey(
         settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
     provider = models.CharField(max_length=50)
+    provider_part = models.ForeignKey(
+        ProviderPart, null=True, blank=True, on_delete=models.CASCADE)
     scope = models.TextField()
     access_token = models.CharField(max_length=2048)
     refresh_token = models.CharField(max_length=2048, blank=True)
@@ -50,16 +64,40 @@ class UserToken(models.Model):
         import oauth_client.utils
         provider = self.get_provider()
 
+        if self.provider_part:
+            token_url = self.provider_part.token_url
+            client_id = self.provider_part.client_id
+            client_secret = self.provider_part.client_secret
+        else:
+            token_url = oauth_client.utils.get_token_url(
+                self.get_provider(), endpoint=self.endpoint)
+            client_id = provider['client_id']
+            client_secret = provider['client_secret']
+        requests.packages.urllib3.add_stderr_logger()
         oauth = OAuth2Session(
-            client_id=provider['client_id'],
+            client_id=client_id,
             scope=self.token.scope or '',
             token=self.token)
-        token = oauth.refresh_token(
-            token_url=oauth_client.utils.get_token_url(self.get_provider(), endpoint=self.endpoint),
-            client_id=provider['client_id'],
-            client_secret=provider['client_secret'])
-
-        self.token = token
+        if self.provider_part:
+            new_token = oauth.get(url=token_url,
+                                  headers={
+                                      'Content-Type': 'application/x-www-form-urlencoded'},
+                                  params={'grant_type': 'refresh_token',
+                                          'client_id': client_id, 'client_secret': client_secret,
+                                          'refresh_token': self.refresh_token}).json()
+            logger.debug(f'Token update response: {new_token}')
+            if 'access_token' in new_token:
+                self.access_token = new_token['access_token']
+                self.refresh_token = new_token['refresh_token']
+                self.expires_at = datetime.now(
+                ) + timedelta(seconds=new_token['expires_in'])
+                self.expires_in = new_token['expires_in']
+        else:
+            token = oauth.refresh_token(
+                token_url=token_url,
+                client_id=client_id,
+                client_secret=client_secret)
+            self.token = token
         self.save()
 
     def get_session(self):

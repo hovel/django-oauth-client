@@ -1,3 +1,4 @@
+import logging
 from importlib import import_module
 from django.conf import settings
 from django.contrib.auth.models import User
@@ -12,7 +13,6 @@ from .utils import get_token_url
 from django.conf import settings
 
 OAUTH_REGISTER_NEW = getattr(settings, 'OAUTH_REGISTER_NEW')
-import logging
 
 logger = logging.getLogger('oauth_client')
 
