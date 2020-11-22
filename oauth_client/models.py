@@ -79,7 +79,8 @@ class UserToken(models.Model):
             scope=self.token.scope or '',
             token=self.token)
         if self.provider_part:
-            new_token = oauth.get(url=token_url,
+            # Use requests instead oauth to refresh token
+            new_token = requests.get(url=token_url,
                                   headers={
                                       'Content-Type': 'application/x-www-form-urlencoded'},
                                   params={'grant_type': 'refresh_token',
