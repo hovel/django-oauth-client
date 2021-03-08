@@ -43,7 +43,7 @@ class UserToken(models.Model):
     installation = models.BooleanField(default=False)
 
     class Meta:
-        unique_together = ['user', 'provider']
+        unique_together = ['user', 'provider', 'provider_part']
 
     def __str__(self) -> str:
         return f'{self.user} {self.provider}'
