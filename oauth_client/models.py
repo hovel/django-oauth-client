@@ -1,6 +1,7 @@
 from datetime import datetime, timedelta
 import logging
 from django.conf import settings
+from django.core.exceptions import ValidationError
 from django.db import models
 from django.utils import timezone
 from oauthlib.oauth2 import OAuth2Token
@@ -18,6 +19,13 @@ class ProviderPart(models.Model):
     provider = models.CharField(max_length=50, db_index=True)
 
 
+class Integration(models.Model):
+    endpoint = models.CharField(max_length=255, unique=True)
+
+    def __str__(self):
+        return f'{self.endpoint}'
+
+
 class UserToken(models.Model):
     user = models.ForeignKey(
         settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
@@ -29,12 +37,46 @@ class UserToken(models.Model):
     refresh_token = models.CharField(max_length=2048, blank=True)
     expires_at = models.DateTimeField(blank=True, null=True)
     endpoint = models.CharField(max_length=255, null=True, blank=True)
+    integration = models.ForeignKey(
+        'oauth_client.Integration', on_delete=models.CASCADE,
+        blank=True, null=True)
 
     class Meta:
         unique_together = ['user', 'provider']
 
     def __str__(self) -> str:
         return f'{self.user} {self.provider}'
+
+    def save(self, *args, **kwargs):
+        old_instance = self._meta.default_manager.filter(pk=self.pk).first()
+        if old_instance:
+
+            endpoint_changed = False
+            integration_changed = False
+
+            if old_instance.endpoint != self.endpoint:
+                endpoint_changed = True
+            if old_instance.integration != self.integration:
+                integration_changed = True
+
+            if endpoint_changed and integration_changed:
+                endpoint = self.endpoint or ''
+                integration_endpoint = getattr(self.integration, 'endpoint', '')
+                if endpoint != integration_endpoint:
+                    raise ValidationError(f'{endpoint} !+= {integration_endpoint}')
+            elif endpoint_changed:
+                if self.endpoint:
+                    self.integration, _ = Integration.objects \
+                        .get_or_create(endpoint=self.endpoint)
+                else:
+                    self.integration = None
+            elif integration_changed:
+                if self.integration:
+                    self.endpoint = self.integration.endpoint
+                else:
+                    self.endpoint = ''
+
+        super().save(*args, **kwargs)
 
     @property
     def token(self):
