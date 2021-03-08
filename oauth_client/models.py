@@ -51,31 +51,28 @@ class UserToken(models.Model):
     def save(self, *args, **kwargs):
         old_instance = self._meta.default_manager.filter(pk=self.pk).first()
         if old_instance:
+            endpoint_changed = old_instance.endpoint != self.endpoint
+            integration_changed = old_instance.integration != self.integration
+        else:
+            endpoint_changed = bool(self.endpoint)
+            integration_changed = bool(self.integration)
 
-            endpoint_changed = False
-            integration_changed = False
-
-            if old_instance.endpoint != self.endpoint:
-                endpoint_changed = True
-            if old_instance.integration != self.integration:
-                integration_changed = True
-
-            if endpoint_changed and integration_changed:
-                endpoint = self.endpoint or ''
-                integration_endpoint = getattr(self.integration, 'endpoint', '')
-                if endpoint != integration_endpoint:
-                    raise ValidationError(f'{endpoint} != {integration_endpoint}')
-            elif endpoint_changed:
-                if self.endpoint:
-                    self.integration, _ = Integration.objects \
-                        .get_or_create(endpoint=self.endpoint)
-                else:
-                    self.integration = None
-            elif integration_changed:
-                if self.integration:
-                    self.endpoint = self.integration.endpoint
-                else:
-                    self.endpoint = ''
+        if endpoint_changed and integration_changed:
+            endpoint = self.endpoint or ''
+            integration_endpoint = getattr(self.integration, 'endpoint', '')
+            if endpoint != integration_endpoint:
+                raise ValidationError(f'{endpoint} != {integration_endpoint}')
+        elif endpoint_changed:
+            if self.endpoint:
+                self.integration, _ = Integration.objects \
+                    .get_or_create(endpoint=self.endpoint)
+            else:
+                self.integration = None
+        elif integration_changed:
+            if self.integration:
+                self.endpoint = self.integration.endpoint
+            else:
+                self.endpoint = ''
 
         super().save(*args, **kwargs)
 
