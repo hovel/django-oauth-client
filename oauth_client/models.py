@@ -40,6 +40,7 @@ class UserToken(models.Model):
     integration = models.ForeignKey(
         'oauth_client.Integration', on_delete=models.CASCADE,
         blank=True, null=True)
+    installation = models.BooleanField(default=False)
 
     class Meta:
         unique_together = ['user', 'provider']
