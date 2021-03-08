@@ -64,7 +64,7 @@ class UserToken(models.Model):
                 endpoint = self.endpoint or ''
                 integration_endpoint = getattr(self.integration, 'endpoint', '')
                 if endpoint != integration_endpoint:
-                    raise ValidationError(f'{endpoint} !+= {integration_endpoint}')
+                    raise ValidationError(f'{endpoint} != {integration_endpoint}')
             elif endpoint_changed:
                 if self.endpoint:
                     self.integration, _ = Integration.objects \
