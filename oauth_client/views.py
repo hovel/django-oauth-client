@@ -2,7 +2,6 @@ import logging
 from importlib import import_module
 from django.conf import settings
 from django.contrib.auth.models import User
-from django.contrib.auth.mixins import LoginRequiredMixin
 from django.http import Http404
 from django.shortcuts import redirect
 from django.views import View
@@ -10,7 +9,6 @@ from requests_oauthlib import OAuth2Session
 from oauth_client.models import UserToken
 from oauth_client.utils import get_state_session_key
 from .utils import get_token_url
-from django.conf import settings
 
 OAUTH_REGISTER_NEW = getattr(settings, 'OAUTH_REGISTER_NEW')
 

@@ -1,13 +1,15 @@
-from datetime import timedelta, timezone
+from datetime import timedelta
 from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.http import HttpRequest
 from django.core.exceptions import ImproperlyConfigured
+from django.utils import timezone
 from requests_oauthlib import OAuth2Session
 
 from oauth_client.models import UserToken
 
 User = get_user_model()
+
 
 def get_token_url(provider: dict, request: HttpRequest=None, endpoint: str=None) -> str:
     assert(request or endpoint)
