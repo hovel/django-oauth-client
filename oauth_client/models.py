@@ -130,7 +130,7 @@ class UserToken(models.Model):
             if 'access_token' in new_token:
                 self.access_token = new_token['access_token']
                 self.refresh_token = new_token['refresh_token']
-                self.expires_at = datetime.now(
+                self.expires_at = timezone.now(
                 ) + timedelta(seconds=new_token['expires_in'])
                 self.expires_in = new_token['expires_in']
         else:
