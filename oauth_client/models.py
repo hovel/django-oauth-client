@@ -23,7 +23,7 @@ class Integration(models.Model):
     endpoint = models.CharField(max_length=255, unique=True)
     admin = models.ForeignKey(
         settings.AUTH_USER_MODEL, on_delete=models.SET_NULL,
-        blank=True, null=True)
+        related_name='managed_integrations', blank=True, null=True)
 
     def __str__(self):
         return f'{self.endpoint}'

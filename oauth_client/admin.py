@@ -9,5 +9,5 @@ class ProviderPartAdmin(admin.ModelAdmin):
 
 
 @admin.register(Integration)
-class Integration(admin.ModelAdmin):
+class IntegrationAdmin(admin.ModelAdmin):
     pass
