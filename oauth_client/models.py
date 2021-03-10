@@ -21,6 +21,9 @@ class ProviderPart(models.Model):
 
 class Integration(models.Model):
     endpoint = models.CharField(max_length=255, unique=True)
+    admin = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.SET_NULL,
+        blank=True, null=True)
 
     def __str__(self):
         return f'{self.endpoint}'
@@ -40,7 +43,6 @@ class UserToken(models.Model):
     integration = models.ForeignKey(
         'oauth_client.Integration', on_delete=models.CASCADE,
         blank=True, null=True)
-    installation = models.BooleanField(default=False)
 
     class Meta:
         unique_together = [
