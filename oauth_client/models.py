@@ -105,6 +105,18 @@ class UserToken(models.Model):
         self.refresh_token = token.get('refresh_token', '')
         self.expires_at = expires_at
 
+    @property
+    def client_id(self):
+        if self.provider_part:
+            return self.provider_part.client_id
+        return self.get_provider()['client_id']
+
+    @property
+    def client_secret(self):
+        if self.provider_part:
+            return self.provider_part.client_secret
+        return self.get_provider()['client_secret']
+
     def refresh(self):
         import oauth_client.utils
         provider = self.get_provider()
