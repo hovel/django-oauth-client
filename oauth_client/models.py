@@ -121,6 +121,10 @@ class UserToken(models.Model):
             return self.provider_part.client_secret
         return self.get_provider()['client_secret']
 
+    @property
+    def is_expired(self):
+        return self.expires_at < timezone.now() + timedelta(seconds=30)
+
     def refresh(self):
         import oauth_client.utils
         provider = self.get_provider()
