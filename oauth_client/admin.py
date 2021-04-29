@@ -1,10 +1,10 @@
 from django.contrib import admin
 
-from oauth_client.models import ProviderPart, Integration
+from oauth_client.models import Provider, Integration
 
 
-@admin.register(ProviderPart)
-class ProviderPartAdmin(admin.ModelAdmin):
+@admin.register(Provider)
+class ProviderAdmin(admin.ModelAdmin):
     list_display = ['name', 'provider']
 
 

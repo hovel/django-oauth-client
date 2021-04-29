@@ -11,7 +11,7 @@ import requests
 logger = logging.getLogger(__name__)
 
 
-class ProviderPart(models.Model):
+class Provider(models.Model):
     name = models.CharField(max_length=50, db_index=True)
     client_id = models.CharField(max_length=2048, null=True, blank=True)
     client_secret = models.CharField(max_length=2048, null=True, blank=True)
@@ -38,7 +38,7 @@ class UserToken(models.Model):
         settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
     provider = models.CharField(max_length=50)
     provider_part = models.ForeignKey(
-        ProviderPart, null=True, blank=True, on_delete=models.CASCADE)
+        Provider, null=True, blank=True, on_delete=models.CASCADE)
     scope = models.TextField()
     access_token = models.CharField(max_length=2048)
     refresh_token = models.CharField(max_length=2048, blank=True)
