@@ -35,7 +35,7 @@ class OAuth2CallbackView(View):
             'http://', 'https://')  # always use https, they said. mwahaha!
 
         token_url = get_token_url(provider, request)
-        #kwgs = provider.get('addional_requests_kwargs', {})
+        #kwgs = preset.get('addional_requests_kwargs', {})
         token = oauth.fetch_token(
             token_url=token_url,
             client_secret=provider['client_secret'],

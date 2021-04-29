@@ -16,7 +16,7 @@ class Provider(models.Model):
     client_id = models.CharField(max_length=2048, null=True, blank=True)
     client_secret = models.CharField(max_length=2048, null=True, blank=True)
     token_url = models.URLField(max_length=150, null=True, blank=True)
-    provider = models.CharField(max_length=50, db_index=True)
+    preset = models.CharField(max_length=50, db_index=True)
 
     def __str__(self):
         return f'{self.name}'
@@ -36,7 +36,7 @@ class Integration(models.Model):
 class UserToken(models.Model):
     user = models.ForeignKey(
         settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
-    provider = models.CharField(max_length=50)
+    preset = models.CharField(max_length=50)
     provider_part = models.ForeignKey(
         Provider, null=True, blank=True, on_delete=models.CASCADE)
     scope = models.TextField()
@@ -50,12 +50,12 @@ class UserToken(models.Model):
 
     class Meta:
         unique_together = [
-            ['user', 'provider', 'provider_part', 'endpoint'],
-            ['user', 'provider', 'provider_part', 'integration'],
+            ['user', 'preset', 'provider_part', 'endpoint'],
+            ['user', 'preset', 'provider_part', 'integration'],
         ]
 
     def __str__(self) -> str:
-        return f'{self.user} {self.provider}'
+        return f'{self.user} {self.preset}'
 
     def save(self, *args, **kwargs):
         old_instance = self._meta.default_manager.filter(pk=self.pk).first()
@@ -175,4 +175,4 @@ class UserToken(models.Model):
         return oauth
 
     def get_provider(self) -> dict:
-        return settings.OAUTH2_PROVIDERS[self.provider]
+        return settings.OAUTH2_PROVIDERS[self.preset]

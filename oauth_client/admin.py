@@ -5,7 +5,7 @@ from oauth_client.models import Provider, Integration
 
 @admin.register(Provider)
 class ProviderAdmin(admin.ModelAdmin):
-    list_display = ['name', 'provider']
+    list_display = ['name', 'preset']
 
 
 @admin.register(Integration)
