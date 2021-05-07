@@ -1,6 +1,5 @@
 from datetime import timedelta
 
-from django.conf import settings
 from django.core.management.base import BaseCommand
 from django.utils import timezone
 
@@ -14,9 +13,7 @@ class Command(BaseCommand):
         threshold = timezone.now() + timedelta(days=2)
 
         user_token_qs = UserToken.objects \
-            .filter(user__is_active=True,
-                    provider__in=settings.OAUTH2_PROVIDERS,
-                    expires_at__lt=threshold) \
+            .filter(user__is_active=True, expires_at__lt=threshold) \
             .exclude(refresh_token='')
 
         for user_token in user_token_qs:

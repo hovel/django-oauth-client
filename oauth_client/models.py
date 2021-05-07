@@ -1,8 +1,10 @@
 from datetime import datetime, timedelta
 import logging
+
 from django.conf import settings
 from django.core.exceptions import ValidationError
 from django.db import models
+from django.db.models import TextChoices
 from django.utils import timezone
 from oauthlib.oauth2 import OAuth2Token
 from requests_oauthlib import OAuth2Session
@@ -11,15 +13,34 @@ import requests
 logger = logging.getLogger(__name__)
 
 
-class Provider(models.Model):
-    name = models.CharField(max_length=50, db_index=True)
-    client_id = models.CharField(max_length=2048, null=True, blank=True)
-    client_secret = models.CharField(max_length=2048, null=True, blank=True)
-    token_url = models.URLField(max_length=150, null=True, blank=True)
-    preset = models.CharField(max_length=50, db_index=True)
+class Preset(TextChoices):
+    BX24 = 'bx24', 'Bitrix24'
+    AMOCRM = 'amocrm', 'amoCRM'
+    CUSTOM = 'custom', 'Custom'
 
-    def __str__(self):
+
+class Provider(models.Model):
+    Preset = Preset
+
+    name = models.CharField(max_length=50, unique=True)
+    preset = models.CharField(max_length=50, choices=Preset.choices)
+    # поле предусмотрено для совместимости со старыми урлами, которых
+    # провайдеры обозначались через кодовое имя или через сочетания кодового
+    # имени и идентификатора, например как "bx" или "bx/1"
+    slug = models.CharField(max_length=10)
+
+    client_id = models.CharField(max_length=2048, blank=True)
+    client_secret = models.CharField(max_length=2048, blank=True)
+    authorization_url = models.URLField(max_length=2048, blank=True)
+    token_url = models.URLField(max_length=2048, blank=True)
+
+    def __str__(self) -> str:
         return f'{self.name}'
+
+    def save(self, *args, **kwargs):
+        if not self.slug:
+            self.slug = f'{self.preset}/{self.id}'
+        super().save(*args, **kwargs)
 
 
 class Integration(models.Model):
@@ -36,9 +57,8 @@ class Integration(models.Model):
 class UserToken(models.Model):
     user = models.ForeignKey(
         settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
-    preset = models.CharField(max_length=50)
-    provider_part = models.ForeignKey(
-        Provider, null=True, blank=True, on_delete=models.CASCADE)
+    provider = models.ForeignKey(
+        Provider, on_delete=models.CASCADE)
     scope = models.TextField()
     access_token = models.CharField(max_length=2048)
     refresh_token = models.CharField(max_length=2048, blank=True)
@@ -50,12 +70,12 @@ class UserToken(models.Model):
 
     class Meta:
         unique_together = [
-            ['user', 'preset', 'provider_part', 'endpoint'],
-            ['user', 'preset', 'provider_part', 'integration'],
+            ['user', 'provider', 'endpoint'],
+            ['user', 'provider', 'integration'],
         ]
 
     def __str__(self) -> str:
-        return f'{self.user} {self.preset}'
+        return f'{self.user} {self.provider} {self.integration}'
 
     def save(self, *args, **kwargs):
         old_instance = self._meta.default_manager.filter(pk=self.pk).first()
@@ -111,68 +131,57 @@ class UserToken(models.Model):
 
     @property
     def client_id(self):
-        if self.provider_part:
-            return self.provider_part.client_id
-        return self.get_provider()['client_id']
+        return self.provider.client_id
 
     @property
     def client_secret(self):
-        if self.provider_part:
-            return self.provider_part.client_secret
-        return self.get_provider()['client_secret']
+        return self.provider.client_secret
 
     @property
     def is_expired(self):
         return self.expires_at < timezone.now() + timedelta(seconds=30)
 
     def refresh(self):
-        import oauth_client.utils
-        provider = self.get_provider()
+        from oauth_client.utils import get_token_url
 
-        if self.provider_part:
-            token_url = self.provider_part.token_url
-            client_id = self.provider_part.client_id
-            client_secret = self.provider_part.client_secret
-        else:
-            token_url = oauth_client.utils.get_token_url(
-                self.get_provider(), endpoint=self.endpoint)
-            client_id = provider['client_id']
-            client_secret = provider['client_secret']
-        requests.packages.urllib3.add_stderr_logger()
-        oauth = OAuth2Session(
-            client_id=client_id,
-            scope=self.token.scope or '',
-            token=self.token)
-        if self.provider_part:
-            # Use requests instead oauth to refresh token
-            new_token = requests.get(url=token_url,
-                                  headers={
-                                      'Content-Type': 'application/x-www-form-urlencoded'},
-                                  params={'grant_type': 'refresh_token',
-                                          'client_id': client_id, 'client_secret': client_secret,
-                                          'refresh_token': self.refresh_token}).json()
+        endpoint = self.integration.endpoint if self.integration else ''
+        token_url = get_token_url(provider=self.provider, endpoint=endpoint)
+
+        if self.provider.preset == Preset.BX24:
+            requests.packages.urllib3.add_stderr_logger()
+            new_token = requests.get(
+                url=token_url,
+                headers={'Content-Type': 'application/x-www-form-urlencoded'},
+                params={
+                    'grant_type': 'refresh_token',
+                    'client_id': self.client_id,
+                    'client_secret': self.client_secret,
+                    'refresh_token': self.refresh_token,
+                }
+            ).json()
             logger.debug(f'Token update response: {new_token}')
             if 'access_token' in new_token:
                 self.access_token = new_token['access_token']
                 self.refresh_token = new_token['refresh_token']
-                self.expires_at = timezone.now(
-                ) + timedelta(seconds=new_token['expires_in'])
+                self.expires_at = timezone.now() + timedelta(
+                    seconds=new_token['expires_in'])
                 self.expires_in = new_token['expires_in']
         else:
+            oauth = OAuth2Session(
+                client_id=self.client_id,
+                scope=self.token.scope or '',
+                token=self.token)
             token = oauth.refresh_token(
                 token_url=token_url,
-                client_id=client_id,
-                client_secret=client_secret)
+                client_id=self.client_id,
+                client_secret=self.client_secret)
             self.token = token
+
         self.save()
 
     def get_session(self):
-        provider = self.get_provider()
         oauth = OAuth2Session(
-            client_id=provider['client_id'],
+            client_id=self.client_id,
             scope=self.token.scope or '',
             token=self.token)
         return oauth
-
-    def get_provider(self) -> dict:
-        return settings.OAUTH2_PROVIDERS[self.preset]
