@@ -3,16 +3,26 @@ from datetime import datetime
 from urllib.parse import urlparse
 
 from django.conf import settings
+from django.contrib import messages
 from django.contrib.auth import logout, login
+from django.contrib.auth.mixins import PermissionRequiredMixin
 from django.contrib.auth.models import User
 from django.http import Http404, HttpRequest, HttpResponse
 from django.shortcuts import redirect, get_object_or_404
+from django.urls import reverse, reverse_lazy
 from django.utils.module_loading import import_string
 from django.views import View
+from django.views.generic import CreateView, UpdateView, DeleteView, ListView
 from requests_oauthlib import OAuth2Session
 
 from .models import UserToken, Provider, Integration
 from .utils import get_token_url, get_state_session_key, get_redirect_url
+
+try:
+    from rest_framework_tracking.mixins import LoggingMixin
+except ImportError:
+    class LoggingMixin:
+        pass
 
 OAUTH_REGISTER_NEW = getattr(settings, 'OAUTH_REGISTER_NEW')
 
@@ -128,3 +138,53 @@ class OAuth2CallbackView(View):
 
         success_url = success_url(self.user_token)
         return success_url
+
+
+class ProviderFormMixin:
+    template_name = 'oauth_client/provider_form.html'
+    model = Provider
+    fields = ['name', 'preset',
+              'client_id', 'client_secret',
+              'authorization_url', 'token_url']
+
+    def form_valid(self, form):
+        response = super().form_valid(form)
+        messages.success(self.request, 'Сохранено')
+        return response
+
+    def form_invalid(self, form):
+        response = super().form_invalid(form)
+        messages.error(self.request, 'Ошибка')
+        return response
+
+    def get_success_url(self) -> str:
+        return reverse('oauth_client:provider-update',
+                       kwargs={'pk': self.object.id})
+
+
+class ProviderCreateView(LoggingMixin, PermissionRequiredMixin,
+                         ProviderFormMixin, CreateView):
+    permission_required = 'oauth_client.add_provider'
+
+
+class ProviderUpdateView(LoggingMixin, PermissionRequiredMixin,
+                         ProviderFormMixin, UpdateView):
+    permission_required = 'oauth_client.change_provider'
+
+
+class ProviderDeleteView(LoggingMixin, PermissionRequiredMixin, DeleteView):
+    permission_required = 'oauth_client.delete_provider'
+    template_name = 'oauth_client/provider_confirm_delete.html'
+    model = Provider
+    success_url = reverse_lazy('oauth_client:provider-list')
+
+    def delete(self, request, *args, **kwargs):
+        response = super().delete(request, *args, **kwargs)
+        messages.success(self.request, 'Удалено')
+        return response
+
+
+class ProviderListView(LoggingMixin, PermissionRequiredMixin, ListView):
+    permission_required = 'oauth_client.view_provider'
+    template_name = 'oauth_client/provider_list.html'
+    model = Provider

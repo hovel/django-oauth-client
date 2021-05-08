@@ -1,6 +1,7 @@
-from datetime import datetime, timedelta
 import logging
+from datetime import datetime, timedelta
 
+import requests
 from django.conf import settings
 from django.core.exceptions import ValidationError
 from django.db import models
@@ -8,7 +9,6 @@ from django.db.models import TextChoices
 from django.utils import timezone
 from oauthlib.oauth2 import OAuth2Token
 from requests_oauthlib import OAuth2Session
-import requests
 
 logger = logging.getLogger(__name__)
 
@@ -31,6 +31,7 @@ class Provider(models.Model):
 
     client_id = models.CharField(max_length=2048, blank=True)
     client_secret = models.CharField(max_length=2048, blank=True)
+
     authorization_url = models.URLField(max_length=2048, blank=True)
     token_url = models.URLField(max_length=2048, blank=True)
 

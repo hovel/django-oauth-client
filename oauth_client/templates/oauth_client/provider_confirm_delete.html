@@ -1,0 +1,15 @@
+{% extends "oauth_client/provider_base.html" %}
+
+{% block content %}
+
+    <h1 class="h2 mt-3 mb-3">
+        Удаление провайдера "{{ object }}"
+    </h1>
+
+    <form method="post">
+        {% csrf_token %}
+        <p>Вы точно хотите удалить "{{ object }}"?</p>
+        <button class="btn btn-danger" type="submit">Удалить</button>
+    </form>
+
+{% endblock %}

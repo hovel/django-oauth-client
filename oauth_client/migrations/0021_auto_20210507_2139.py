@@ -11,7 +11,7 @@ def forward(apps, schema_editor):
         provider.slug = f'{provider.preset}/{provider.id}'
         provider.save()
 
-    for preset, config in settings.OAUTH2_PROVIDERS.items():
+    for preset, config in getattr(settings, 'OAUTH2_PROVIDERS', {}).items():
         if config:
             client_id = config['client_id']
             client_secret = config['client_secret']

@@ -1,6 +1,7 @@
 from django.urls import path
 
-from oauth_client.views import OAuth2CallbackView
+from oauth_client.views import OAuth2CallbackView, ProviderCreateView, \
+    ProviderUpdateView, ProviderDeleteView, ProviderListView
 
 app_name = 'oauth_client'
 urlpatterns = [
@@ -13,4 +14,17 @@ urlpatterns = [
     path('oauth2_callback/<str:provider_slug>/',
          OAuth2CallbackView.as_view(),
          name='oauth2_callback_part'),
+
+    path('provider/add/',
+         ProviderCreateView.as_view(),
+         name='provider-create'),
+    path('provider/<int:pk>/change/',
+         ProviderUpdateView.as_view(),
+         name='provider-update'),
+    path('provider/<int:pk>/delete/',
+         ProviderDeleteView.as_view(),
+         name='provider-delete'),
+    path('provider/list/',
+         ProviderListView.as_view(),
+         name='provider-list'),
 ]

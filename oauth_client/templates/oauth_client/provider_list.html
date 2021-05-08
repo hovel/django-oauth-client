@@ -1,0 +1,18 @@
+{% extends "oauth_client/provider_base.html" %}
+
+{% block content %}
+
+    <h1 class="h2 mt-3 mb-3">Провайдеры</h1>
+    <p>
+        <a class="btn btn-primary" href="{% url 'oauth_client:provider-create' %}">+ Добавить</a>
+    </p>
+    <ul>
+        {% for provider in object_list %}
+            <li>
+                <a href="{% url 'oauth_client:provider-update' pk=provider.pk %}">{{ provider.name }}</a>
+                <a href="{% url 'oauth_client:provider-delete' pk=provider.pk %}" class="text-danger">&times;</a>
+            </li>
+        {% endfor %}
+    </ul>
+
+{% endblock %}
