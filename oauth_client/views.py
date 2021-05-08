@@ -18,12 +18,6 @@ from requests_oauthlib import OAuth2Session
 from .models import UserToken, Provider, Integration
 from .utils import get_token_url, get_state_session_key, get_redirect_url
 
-try:
-    from rest_framework_tracking.mixins import LoggingMixin
-except ImportError:
-    class LoggingMixin:
-        pass
-
 OAUTH_REGISTER_NEW = getattr(settings, 'OAUTH_REGISTER_NEW')
 
 logger = logging.getLogger('oauth_client')
@@ -162,17 +156,17 @@ class ProviderFormMixin:
                        kwargs={'pk': self.object.id})
 
 
-class ProviderCreateView(LoggingMixin, PermissionRequiredMixin,
-                         ProviderFormMixin, CreateView):
+class ProviderCreateView(PermissionRequiredMixin, ProviderFormMixin,
+                         CreateView):
     permission_required = 'oauth_client.add_provider'
 
 
-class ProviderUpdateView(LoggingMixin, PermissionRequiredMixin,
-                         ProviderFormMixin, UpdateView):
+class ProviderUpdateView(PermissionRequiredMixin, ProviderFormMixin,
+                         UpdateView):
     permission_required = 'oauth_client.change_provider'
 
 
-class ProviderDeleteView(LoggingMixin, PermissionRequiredMixin, DeleteView):
+class ProviderDeleteView(PermissionRequiredMixin, DeleteView):
     permission_required = 'oauth_client.delete_provider'
     template_name = 'oauth_client/provider_confirm_delete.html'
     model = Provider
@@ -184,7 +178,7 @@ class ProviderDeleteView(LoggingMixin, PermissionRequiredMixin, DeleteView):
         return response
 
 
-class ProviderListView(LoggingMixin, PermissionRequiredMixin, ListView):
+class ProviderListView(PermissionRequiredMixin, ListView):
     permission_required = 'oauth_client.view_provider'
     template_name = 'oauth_client/provider_list.html'
     model = Provider
