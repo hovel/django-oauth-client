@@ -8,10 +8,10 @@ urlpatterns = [
     path('oauth2_callback/<int:provider_id>/',
          OAuth2CallbackView.as_view(),
          name='oauth2_callback'),
-    path('oauth2_callback/<str:provider_slug>/',
+    path('oauth2_callback/<path:provider_slug>/',
          OAuth2CallbackView.as_view(),
          name='oauth2_callback'),
-    path('oauth2_callback/<str:provider_slug>/',
+    path('oauth2_callback/<path:provider_slug>/',
          OAuth2CallbackView.as_view(),
          name='oauth2_callback_part'),
 
