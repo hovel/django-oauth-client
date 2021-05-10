@@ -21,7 +21,7 @@ def forward(apps, schema_editor):
             token_url = config.get('token_url', '')
             if callable(token_url):
                 token_url = ''
-            Provider.objects.get_or_create(
+            provider, _ = Provider.objects.get_or_create(
                 name=preset,
                 preset=preset,
                 slug=preset,
@@ -30,11 +30,9 @@ def forward(apps, schema_editor):
                 authorization_url=authorization_url,
                 token_url=token_url,
             )
-
-    for user_token in UserToken.objects.filter(provider__isnull=True):
-        provider = Provider.objects.get(preset=user_token.preset)
-        user_token.provider = provider
-        user_token.save()
+            UserToken.objects \
+                .filter(provider__isnull=True, preset=preset) \
+                .update(provider=provider)
 
 
 def backward(apps, schema_editor):
