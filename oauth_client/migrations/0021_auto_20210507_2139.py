@@ -15,10 +15,10 @@ def forward(apps, schema_editor):
         if config:
             client_id = config['client_id']
             client_secret = config['client_secret']
-            authorization_url = config.get('authorization_url')
+            authorization_url = config.get('authorization_url', '')
             if callable(authorization_url):
                 authorization_url = ''
-            token_url = config.get('token_url')
+            token_url = config.get('token_url', '')
             if callable(token_url):
                 token_url = ''
             Provider.objects.get_or_create(
