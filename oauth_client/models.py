@@ -68,6 +68,7 @@ class UserToken(models.Model):
     integration = models.ForeignKey(
         'oauth_client.Integration', on_delete=models.CASCADE,
         blank=True, null=True)
+    refresh_lock_datetime = models.DateTimeField(blank=True, null=True)
 
     class Meta:
         unique_together = [
@@ -143,6 +144,8 @@ class UserToken(models.Model):
         return self.expires_at < timezone.now() + timedelta(seconds=30)
 
     def refresh(self):
+        # TODO use refresh_lock_datetime
+
         from oauth_client.utils import get_token_url
 
         endpoint = self.integration.endpoint if self.integration else ''
