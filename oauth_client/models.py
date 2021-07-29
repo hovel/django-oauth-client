@@ -5,7 +5,7 @@ import requests
 from django.conf import settings
 from django.core.exceptions import ValidationError
 from django.db import models
-from django.db.models import TextChoices
+from django.db.models import TextChoices, ExpressionWrapper, Q
 from django.utils import timezone
 from oauthlib.oauth2 import OAuth2Token
 from requests_oauthlib import OAuth2Session
@@ -44,15 +44,36 @@ class Provider(models.Model):
         super().save(*args, **kwargs)
 
 
+class IntegrationManager(models.Manager):
+
+    def get_queryset(self):
+        is_installed = ExpressionWrapper(Q(install_finish__isnull=False),
+                                         models.BooleanField())
+        qs = super().get_queryset().annotate(is_installed=is_installed)
+        return qs
+
+
 class Integration(models.Model):
     endpoint = models.CharField(max_length=255, unique=True)
     admin = models.ForeignKey(
         settings.AUTH_USER_MODEL, on_delete=models.SET_NULL,
         related_name='managed_integrations', blank=True, null=True)
-    is_installed = models.BooleanField(default=False)
+    install_start = models.DateTimeField(blank=True, null=True)
+    install_finish = models.DateTimeField(blank=True, null=True)
+
+    objects = IntegrationManager()
 
     def __str__(self):
         return f'{self.endpoint}'
+
+    @property
+    def is_installed(self):
+        return self.install_finish is not None
+
+    @is_installed.setter
+    def is_installed(self, value):
+        if value != self.is_installed:
+            raise ValueError('This property is read-only')
 
 
 class UserToken(models.Model):

@@ -10,4 +10,4 @@ class ProviderAdmin(admin.ModelAdmin):
 
 @admin.register(Integration)
 class IntegrationAdmin(admin.ModelAdmin):
-    list_display = ['endpoint', 'is_installed', 'admin']
+    list_display = ['endpoint', 'admin', 'install_start', 'install_finish']
