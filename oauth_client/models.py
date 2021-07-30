@@ -72,8 +72,10 @@ class Integration(models.Model):
 
     @is_installed.setter
     def is_installed(self, value):
-        if value != self.is_installed:
-            raise ValueError('This property is read-only')
+        if value:
+            self.install_finish = self.install_finish or timezone.now()
+        else:
+            self.install_finish = None
 
 
 class UserToken(models.Model):
