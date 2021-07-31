@@ -60,6 +60,7 @@ class Integration(models.Model):
         related_name='managed_integrations', blank=True, null=True)
     install_start = models.DateTimeField(blank=True, null=True)
     install_finish = models.DateTimeField(blank=True, null=True)
+    app_url = models.CharField(max_length=255, blank=True)
 
     objects = IntegrationManager()
 
