@@ -3,16 +3,17 @@ from typing import Optional
 
 from django.conf import settings
 from django.contrib.auth import get_user_model
+from django.db.models import Q
 from django.http import HttpRequest
 from django.utils import timezone
 from requests_oauthlib import OAuth2Session
 
-from .models import UserToken, Provider
+from .models import UserToken, Provider, Integration
 
 User = get_user_model()
 
 
-def get_token_url(provider: Provider, endpoint: str=None) -> str:
+def get_token_url(provider: Provider, endpoint: str = None) -> str:
     # FIXME оставлено для совместимости
     try:
         provider_config = settings.OAUTH2_PROVIDERS[provider.preset]
@@ -55,3 +56,22 @@ def get_token(user: User, provider: str) -> UserToken:
     if user_token.expires_at < threshold:
         user_token.refresh()
     return user_token
+
+
+def lock_integration(integration: Integration) -> bool:
+    ready = Q(install_start__isnull=True,
+              install_finish__isnull=True)
+    stale = Q(install_start__lt=timezone.now() - timedelta(minutes=10),
+              install_finish__isnull=True)
+    installed = Q(install_start__isnull=False,
+                  install_finish__isnull=False)
+    locked = Integration.objects \
+        .filter(ready | stale | installed, id=integration.id) \
+        .update(install_start=timezone.now(), install_finish=None)
+    return bool(locked)
+
+
+def unlock_integration(integration: Integration):
+    Integration.objects \
+        .filter(id=integration.id) \
+        .update(install_finish=timezone.now())
