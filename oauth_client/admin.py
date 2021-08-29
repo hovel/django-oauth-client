@@ -11,3 +11,4 @@ class ProviderAdmin(admin.ModelAdmin):
 @admin.register(Integration)
 class IntegrationAdmin(admin.ModelAdmin):
     list_display = ['endpoint', 'admin', 'install_start', 'install_finish']
+    raw_id_fields = ['admin']
