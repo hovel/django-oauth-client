@@ -156,16 +156,18 @@ class UserToken(models.Model):
         self.expires_at = expires_at
 
     @property
-    def client_id(self):
+    def client_id(self) -> str:
         return self.provider.client_id
 
     @property
-    def client_secret(self):
+    def client_secret(self) -> str:
         return self.provider.client_secret
 
     @property
-    def is_expired(self):
-        return self.expires_at < timezone.now() + timedelta(seconds=30)
+    def is_expired(self) -> bool:
+        if self.expires_at:
+            return self.expires_at < timezone.now() + timedelta(seconds=30)
+        return False
 
     def refresh(self):
         # TODO use refresh_lock_datetime
