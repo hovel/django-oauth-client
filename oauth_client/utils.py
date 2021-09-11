@@ -7,6 +7,7 @@ from django.db.models import Q
 from django.http import HttpRequest
 from django.utils import timezone
 from requests_oauthlib import OAuth2Session
+from oauth_client.exceptions import LockIntegrationError
 
 from .models import UserToken, Provider, Integration
 
@@ -68,6 +69,8 @@ def lock_integration(integration: Integration) -> bool:
     locked = Integration.objects \
         .filter(ready | stale | installed, id=integration.id) \
         .update(install_start=timezone.now(), install_finish=None)
+    if not bool(locked):
+        raise LockIntegrationError
     return bool(locked)
 
 
