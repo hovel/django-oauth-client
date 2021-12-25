@@ -35,7 +35,11 @@ class Provider(models.Model):
     authorization_url = models.URLField(max_length=2048, blank=True)
     token_url = models.URLField(max_length=2048, blank=True)
 
+    read_only = models.BooleanField(default=False)
+
     def __str__(self) -> str:
+        if self.read_only:
+            return f'{self.name} [READ ONLY]'
         return f'{self.name}'
 
     def save(self, *args, **kwargs):
@@ -61,10 +65,13 @@ class Integration(models.Model):
     install_start = models.DateTimeField(blank=True, null=True)
     install_finish = models.DateTimeField(blank=True, null=True)
     app_url = models.CharField(max_length=255, blank=True)
+    read_only = models.BooleanField(default=False)
 
     objects = IntegrationManager()
 
     def __str__(self):
+        if self.read_only:
+            return f'{self.endpoint} [READ ONLY]'
         return f'{self.endpoint}'
 
     @property
