@@ -12,3 +12,4 @@ class ProviderAdmin(admin.ModelAdmin):
 class IntegrationAdmin(admin.ModelAdmin):
     list_display = ['endpoint', 'admin', 'install_start', 'install_finish']
     raw_id_fields = ['admin']
+    search_fields = ['id', 'endpoint']
