@@ -66,6 +66,7 @@ class Integration(models.Model):
     install_finish = models.DateTimeField(blank=True, null=True)
     app_url = models.CharField(max_length=255, blank=True)
     read_only = models.BooleanField(default=False)
+    is_enabled = models.BooleanField(default=True)
 
     objects = IntegrationManager()
 
